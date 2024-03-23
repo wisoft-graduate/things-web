@@ -1,3 +1,31 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@media (min-width: 480px) and (min-aspect-ratio: 125 / 256) {
+
+    #desktopSideBanner,
+    #floatingContainer {
+        width: calc(100vh * 375 / 768);
+    }
+}
+
+@media (min-width: 480px) and (min-aspect-ratio: 125 / 256) {
+    #desktopSideBanner {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        margin: 0 auto;
+    }
+}
+
+#desktopSideBanner {
+    /* display: none; */
+}
+
+.flex-center {
+    @apply flex items-center justify-center;
+}
