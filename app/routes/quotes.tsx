@@ -14,11 +14,13 @@ export default function Quotes() {
   const toggleCommentButton = () => {
     setIsCommentOpen(!isCommentOpen)
   }
+
   return (
     <div className="bg-green-600 overflow-hidden">
       <div className="absolute inset-0 bg-black opacity-30"></div>
+
       {isCommentOpen && (
-        <div className="w-full layer popup bg-white animate-slide-up !top-auto max-h-[500px]">
+        <div className="w-full layer popup bg-white h-[60%] animate-slide-up !top-auto overflow-hidden full rounded-t-[30px] p-4">
           <p>comment</p>
           <p>comment</p>
           <p>comment</p>
@@ -33,6 +35,7 @@ export default function Quotes() {
           <button onClick={toggleCommentButton}>x</button>
         </div>
       )}
+
       <div className="flex-center h-screen bg-cover bg-[url('/edison.jpg')] ">
         <div id="quotation" className="absolute mt-[-100px]">
           <svg

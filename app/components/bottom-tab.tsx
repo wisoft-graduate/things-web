@@ -1,8 +1,13 @@
+import { Link } from '@remix-run/react'
+
 export default function BottomTab() {
   return (
-    <nav className="absolute bottom-0 left-0 w-full bg-tab-black text-white text-sm h-[9%]">
+    <nav className="absolute bottom-0 left-0 w-full bg-tab-black text-white text-sm h-[9%] z-10">
       <div className="flex h-full items-center parent:hover .child">
-        <div className="group flex-1 flex-col flex-center cursor-pointer">
+        <Link
+          to={'/quotes'}
+          className="group flex-1 flex-col flex-center cursor-pointer"
+        >
           <svg
             className="mb-0.5"
             width="24"
@@ -19,7 +24,7 @@ export default function BottomTab() {
           </svg>
 
           <p className="group-hover:text-point-green">Quotes</p>
-        </div>
+        </Link>
         <div className="group flex-1 flex-col flex-center cursor-pointer">
           <svg
             className="mb-0.5 group-hover:fill-point-green"
@@ -56,7 +61,11 @@ export default function BottomTab() {
           </svg>
           <p className="group-hover:text-point-green">List</p>
         </div>
-        <div className="group flex-1 flex-col flex-center cursor-pointer">
+        <Link
+          // to={'/my'}
+          to={'/auth'}
+          className="group flex-1 flex-col flex-center cursor-pointer"
+        >
           <svg
             className="mb-0.5"
             width="24"
@@ -83,7 +92,7 @@ export default function BottomTab() {
             />
           </svg>
           <p className="group-hover:text-point-green">My</p>
-        </div>
+        </Link>
       </div>
     </nav>
   )
