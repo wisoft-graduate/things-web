@@ -14,7 +14,7 @@ export const meta: MetaFunction = () => {
   ]
 }
 
-const schema = zod
+const signupSchema = zod
   .object({
     id: zod.string().min(4),
     nickname: zod.string().min(4),
@@ -28,9 +28,9 @@ const schema = zod
     path: ['confirmPassword'],
   })
 
-type FormData = zod.infer<typeof schema>
+type FormData = zod.infer<typeof signupSchema>
 
-const resolver = zodResolver(schema)
+const resolver = zodResolver(signupSchema)
 
 export const action = async ({ request }: ActionFuctionArgs) => {
   const { data } = await getValidatedFormData<FormData>(request, resolver)
