@@ -1,5 +1,6 @@
 import type { MetaFunction } from '@remix-run/node'
-import { useState } from 'react'
+import { comment } from 'postcss'
+import { SetStateAction, useState } from 'react'
 
 export const meta: MetaFunction = () => {
   return [
@@ -8,11 +9,160 @@ export const meta: MetaFunction = () => {
   ]
 }
 
+interface Comment {
+  id: number
+  nickname: string
+  text: string
+  userAvatar: string
+  lastUpdatedTime: Date
+  replies: Comment[]
+  isOpen: boolean
+}
+
+interface Bookmark {
+  id: number
+  name: string
+  quotationIds: []
+  visibility: boolean
+  icon: string
+}
+
 export default function Quotes() {
   const [isCommentOpen, setIsCommentOpen] = useState(false)
+  const [isBookmarkOpen, setIsBookmarkOpen] = useState(false)
+  const [isAddBookmarkOpen, setIsAddBookmarkOpen] = useState(false)
 
-  const toggleCommentButton = () => {
+  const [newListName, setNewListName] = useState('')
+
+  const handleListName = (e: { target: { value: SetStateAction<string> } }) => {
+    setNewListName(e.target.value)
+  }
+
+  const [comments, setComments] = useState<Comment[]>([
+    {
+      id: 1,
+      nickname: 'test1',
+      text: 'comment1',
+      userAvatar: 'https://via.placeholder.com/50',
+      lastUpdatedTime: new Date(new Date().getTime() - 2 * 24 * 60 * 60 * 1000),
+      replies: [
+        {
+          id: 2,
+          nickname: 'test2',
+          text: 'reply comment1',
+          userAvatar: 'https://via.placeholder.com/50',
+          lastUpdatedTime: new Date(),
+          replies: [],
+          isOpen: false,
+        },
+      ],
+      isOpen: false,
+    },
+    {
+      id: 3,
+      nickname: 'test2',
+      text: 'comment1',
+      userAvatar: 'https://via.placeholder.com/50',
+      lastUpdatedTime: new Date(
+        new Date().getTime() - 60 * 24 * 60 * 60 * 1000
+      ),
+      replies: [
+        {
+          id: 4,
+          nickname: 'test3',
+          text: 'reply comment1',
+          userAvatar: 'https://via.placeholder.com/50',
+          lastUpdatedTime: new Date(
+            new Date().getTime() - 1 * 24 * 60 * 60 * 100
+          ),
+          replies: [],
+          isOpen: false,
+        },
+      ],
+      isOpen: false,
+    },
+  ])
+
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([
+    {
+      id: 1,
+      name: '자존감',
+      icon: '🕶️',
+      visibility: true,
+      quotationIds: [],
+    },
+    {
+      id: 2,
+      name: '공부',
+      icon: '🎓',
+      visibility: true,
+      quotationIds: [],
+    },
+    {
+      id: 3,
+      name: '사랑',
+      icon: '❤️',
+      visibility: false,
+      quotationIds: [],
+    },
+  ])
+
+  const toggleComment = () => {
     setIsCommentOpen(!isCommentOpen)
+  }
+
+  const toggleBookmark = () => {
+    setIsBookmarkOpen(!isBookmarkOpen)
+  }
+
+  const toggleAddBookmark = () => {
+    setIsBookmarkOpen(false)
+    setIsAddBookmarkOpen(!isAddBookmarkOpen)
+  }
+
+  const toggleCommentEdit = (id: number) => {
+    setComments((prevComments) =>
+      prevComments.map((comment) =>
+        comment.id === id ? { ...comment, isOpen: !comment.isOpen } : comment
+      )
+    )
+  }
+
+  const toggleReplyEdit = (id: number) => {
+    setComments((prevComments) =>
+      prevComments.map((comment) => ({
+        ...comment,
+        replies: comment.replies.map((reply) =>
+          reply.id === id ? { ...reply, isOpen: !reply.isOpen } : reply
+        ),
+      }))
+    )
+  }
+
+  function formatTimeAgo(date: Date): string {
+    const seconds = Math.floor((Date.now() - date.getTime()) / 1000)
+    let interval = Math.floor(seconds / 31536000)
+
+    if (interval > 1) {
+      return `${interval}년 전`
+    }
+    interval = Math.floor(seconds / 2592000)
+    if (interval > 1) {
+      return `${interval}달 전`
+    }
+    interval = Math.floor(seconds / 86400)
+    if (interval > 1) {
+      return `${interval}일 전`
+    }
+    interval = Math.floor(seconds / 3600)
+    if (interval > 1) {
+      return `${interval}시간 전`
+    }
+    interval = Math.floor(seconds / 60)
+    if (interval > 1) {
+      return `${interval}분 전`
+    }
+    return '방금'
   }
 
   return (
@@ -20,19 +170,289 @@ export default function Quotes() {
       <div className="absolute inset-0 bg-black opacity-30"></div>
 
       {isCommentOpen && (
-        <div className="w-full layer popup bg-white h-[60%] animate-slide-up !top-auto overflow-hidden full rounded-t-[30px] p-4">
-          <p>comment</p>
-          <p>comment</p>
-          <p>comment</p>
-          <p>comment</p>
-          <p>comment</p>
-          <p>comment</p>
-          <p>comment</p>
-          <p>comment</p>
-          <p>comment</p>
-          <p>comment</p>
-          <p>comment</p>
-          <button onClick={toggleCommentButton}>x</button>
+        <div className="flex-center w-full layer popup bg-white h-[60%] animate-slide-up !top-auto overflow-hidden full rounded-t-[30px] p-4">
+          <button className="absolute top-10 right-10" onClick={toggleComment}>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M19.7081 18.2921C19.801 18.385 19.8747 18.4953 19.9249 18.6167C19.9752 18.7381 20.0011 18.8682 20.0011 18.9996C20.0011 19.131 19.9752 19.2611 19.9249 19.3825C19.8747 19.5039 19.801 19.6142 19.7081 19.7071C19.6151 19.8 19.5048 19.8737 19.3835 19.924C19.2621 19.9743 19.132 20.0001 19.0006 20.0001C18.8692 20.0001 18.7391 19.9743 18.6177 19.924C18.4963 19.8737 18.386 19.8 18.2931 19.7071L10.0006 11.4133L1.70806 19.7071C1.52042 19.8947 1.26592 20.0001 1.00056 20.0001C0.735192 20.0001 0.480697 19.8947 0.293056 19.7071C0.105415 19.5194 5.23096e-09 19.2649 0 18.9996C-5.23096e-09 18.7342 0.105415 18.4797 0.293056 18.2921L8.58681 9.99958L0.293056 1.70708C0.105415 1.51944 -1.97712e-09 1.26494 0 0.999579C1.97712e-09 0.734215 0.105415 0.47972 0.293056 0.292079C0.480697 0.104439 0.735192 -0.000976561 1.00056 -0.000976562C1.26592 -0.000976564 1.52042 0.104439 1.70806 0.292079L10.0006 8.58583L18.2931 0.292079C18.4807 0.104439 18.7352 -0.000976568 19.0006 -0.000976562C19.2659 -0.000976557 19.5204 0.104439 19.7081 0.292079C19.8957 0.47972 20.0011 0.734215 20.0011 0.999579C20.0011 1.26494 19.8957 1.51944 19.7081 1.70708L11.4143 9.99958L19.7081 18.2921Z"
+                fill="#111111"
+              />
+            </svg>
+          </button>
+          <h1 className="absolute top-10">댓글</h1>
+
+          <div className="absolute top-16 px-8 w-full">
+            {comments.map((comment) => (
+              <div key={comment.id} className="mt-8 flex w-full">
+                <img
+                  src={comment.userAvatar}
+                  alt="avatar"
+                  className="rounded-full w-10 h-10 mr-3"
+                />
+                <div>
+                  <div className="flex">
+                    <p>{comment.nickname}</p>
+                    <p className="ml-2 text-[#767676]">
+                      {formatTimeAgo(comment.lastUpdatedTime)}
+                    </p>
+                    <button
+                      className=" absolute right-10"
+                      onBlur={() => toggleCommentEdit(comment.id)}
+                      onClick={() => toggleCommentEdit(comment.id)}
+                    >
+                      <svg
+                        width="6"
+                        height="18"
+                        viewBox="0 0 3 15"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <circle cx="1.5" cy="1.5" r="1.5" fill="#DDDDDD" />
+                        <circle cx="1.5" cy="7.5" r="1.5" fill="#DDDDDD" />
+                        <circle cx="1.5" cy="13.5" r="1.5" fill="#DDDDDD" />
+                      </svg>
+                    </button>
+                    {comment.isOpen && (
+                      <div className="absolute rounded-md flex flex-col bg-[#f6f6f6] text-[#767676] right-10">
+                        <button className="py-1 px-6">수정</button>
+                        <hr />
+                        <button className="py-1">삭제</button>
+                        <hr />
+                        <button className="py-1">신고</button>
+                      </div>
+                    )}
+                  </div>
+                  <p>{comment.text}</p>
+                  <button className="text-[#767676]">답글 달기</button>
+                  <ul>
+                    {comment.replies.map((reply) => (
+                      <li key={reply.id} className="flex mt-8">
+                        <img
+                          src={reply.userAvatar}
+                          alt="avatar"
+                          className="rounded-full w-10 h-10 mr-3"
+                        />
+                        <div>
+                          <div className="flex">
+                            <p>{reply.nickname}</p>
+                            <p className="ml-2 text-[#767676]">
+                              {formatTimeAgo(reply.lastUpdatedTime)}
+                            </p>
+                            <button
+                              className="absolute right-10"
+                              onBlur={() => toggleReplyEdit(reply.id)}
+                              onClick={() => toggleReplyEdit(reply.id)}
+                            >
+                              <svg
+                                width="6"
+                                height="18"
+                                viewBox="0 0 3 15"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <circle
+                                  cx="1.5"
+                                  cy="1.5"
+                                  r="1.5"
+                                  fill="#DDDDDD"
+                                />
+                                <circle
+                                  cx="1.5"
+                                  cy="7.5"
+                                  r="1.5"
+                                  fill="#DDDDDD"
+                                />
+                                <circle
+                                  cx="1.5"
+                                  cy="13.5"
+                                  r="1.5"
+                                  fill="#DDDDDD"
+                                />
+                              </svg>
+                            </button>
+                            {reply.isOpen && (
+                              <div className="absolute rounded-md flex flex-col bg-[#f6f6f6] text-[#767676] right-10">
+                                <button className="py-1 px-6">수정</button>
+                                <hr />
+                                <button className="py-1">삭제</button>
+                                <hr />
+                                <button className="py-1">신고</button>
+                              </div>
+                            )}
+                          </div>
+                          <p>{reply.text}</p>
+                          <button className="text-[#767676]">답글 달기</button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ))}
+          </div>
+          <form
+            // onSubmit={handleSubmit}
+            className="absolute bottom-10 flex items-center w-[90%]"
+          >
+            <img
+              src="https://via.placeholder.com/50"
+              alt="Your Avatar"
+              className="rounded-full w-12 h-12 mr-3"
+            />
+            <div className={`flex rounded-full bg-[#F3F3F3] px-2 w-full h-12`}>
+              <input
+                type="text"
+                className="placeholder-[#767676] bg-[#F3F3F3] outline-none flex-grow ml-4"
+                placeholder="댓글 입력..."
+              />
+              <button
+                type="submit"
+                className="px-6 my-1 bg-point-green text-white rounded-full"
+              >
+                <svg
+                  width="21"
+                  height="23"
+                  viewBox="0 0 17 19"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M15.8719 8.90648C15.771 9.00774 15.6511 9.08808 15.5191 9.1429C15.3871 9.19772 15.2455 9.22594 15.1026 9.22594C14.9596 9.22594 14.8181 9.19772 14.686 9.1429C14.554 9.08808 14.4341 9.00774 14.3332 8.90648L9.67262 4.2459V17.5515C9.67262 17.8396 9.55818 18.1158 9.35449 18.3195C9.15079 18.5232 8.87452 18.6377 8.58645 18.6377C8.29838 18.6377 8.02211 18.5232 7.81841 18.3195C7.61471 18.1158 7.50028 17.8396 7.50028 17.5515V4.2459L2.83789 8.90648C2.63384 9.11053 2.35709 9.22516 2.06852 9.22516C1.77995 9.22516 1.5032 9.11053 1.29915 8.90648C1.0951 8.70243 0.980469 8.42568 0.980469 8.13711C0.980469 7.84854 1.0951 7.57179 1.29915 7.36774L7.81617 0.850716C7.91708 0.749456 8.03699 0.669112 8.16901 0.614291C8.30104 0.55947 8.44259 0.53125 8.58554 0.53125C8.7285 0.53125 8.87005 0.55947 9.00207 0.614291C9.1341 0.669112 9.254 0.749456 9.35491 0.850716L15.8719 7.36774C15.9732 7.46865 16.0535 7.58855 16.1084 7.72058C16.1632 7.8526 16.1914 7.99415 16.1914 8.13711C16.1914 8.28006 16.1632 8.42161 16.1084 8.55364C16.0535 8.68566 15.9732 8.80557 15.8719 8.90648Z"
+                    fill="#1F1F25"
+                  />
+                </svg>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {isBookmarkOpen && (
+        <div className="flex items-center flex-col w-full layer popup bg-white h-[60%] animate-slide-up !top-auto overflow-hidden full rounded-t-[30px] px-16">
+          <button className="absolute top-10 right-10" onClick={toggleBookmark}>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M19.7081 18.2921C19.801 18.385 19.8747 18.4953 19.9249 18.6167C19.9752 18.7381 20.0011 18.8682 20.0011 18.9996C20.0011 19.131 19.9752 19.2611 19.9249 19.3825C19.8747 19.5039 19.801 19.6142 19.7081 19.7071C19.6151 19.8 19.5048 19.8737 19.3835 19.924C19.2621 19.9743 19.132 20.0001 19.0006 20.0001C18.8692 20.0001 18.7391 19.9743 18.6177 19.924C18.4963 19.8737 18.386 19.8 18.2931 19.7071L10.0006 11.4133L1.70806 19.7071C1.52042 19.8947 1.26592 20.0001 1.00056 20.0001C0.735192 20.0001 0.480697 19.8947 0.293056 19.7071C0.105415 19.5194 5.23096e-09 19.2649 0 18.9996C-5.23096e-09 18.7342 0.105415 18.4797 0.293056 18.2921L8.58681 9.99958L0.293056 1.70708C0.105415 1.51944 -1.97712e-09 1.26494 0 0.999579C1.97712e-09 0.734215 0.105415 0.47972 0.293056 0.292079C0.480697 0.104439 0.735192 -0.000976561 1.00056 -0.000976562C1.26592 -0.000976564 1.52042 0.104439 1.70806 0.292079L10.0006 8.58583L18.2931 0.292079C18.4807 0.104439 18.7352 -0.000976568 19.0006 -0.000976562C19.2659 -0.000976557 19.5204 0.104439 19.7081 0.292079C19.8957 0.47972 20.0011 0.734215 20.0011 0.999579C20.0011 1.26494 19.8957 1.51944 19.7081 1.70708L11.4143 9.99958L19.7081 18.2921Z"
+                fill="#111111"
+              />
+            </svg>
+          </button>
+          <h1 className="absolute top-10">리스트 추가</h1>
+          <button
+            type="submit"
+            // disabled={true}
+            onClick={toggleAddBookmark}
+            className={`mt-20 bg-[#f3f3f3] text-[#767676] rounded-full w-full py-4
+            ${
+              false
+                ? 'bg-point-green drop-shadow-lg transition-all duration-300 ease-in-out'
+                : ''
+            }`}
+          >
+            ⊕ 새 리스트 생성
+          </button>
+          <div className="grid gap-6 grid-cols-2 w-full mt-6">
+            <div className="flex-center py-5 text-[#767676] text-lg border rounded-[20px]">
+              <p className="text-[28px] mr-2">👍</p>
+              <p>좋아요</p>
+            </div>
+            {bookmarks.map((bookmark) => (
+              <div
+                key={bookmark.id}
+                className="flex-center py-5 text-[#767676] text-lg border rounded-[20px]"
+              >
+                <p className="text-[28px] mr-2">{bookmark.icon}</p>
+                <p>{bookmark.name}</p>
+              </div>
+            ))}
+          </div>
+          <button
+            type="submit"
+            // disabled={true}
+            className={`absolute bottom-10 bg-[#f3f3f3] text-[#767676] rounded-full w-[77.4%] mt-6 py-5
+            ${
+              false
+                ? 'bg-point-green drop-shadow-lg transition-all duration-300 ease-in-out'
+                : ''
+            }`}
+          >
+            저장
+          </button>
+        </div>
+      )}
+
+      {isAddBookmarkOpen && (
+        <div className="flex items-center flex-col w-full layer popup bg-white h-[40%] animate-slide-up !top-auto overflow-hidden full rounded-t-[30px] px-16">
+          <button
+            className="absolute top-10 right-10"
+            onClick={toggleAddBookmark}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M19.7081 18.2921C19.801 18.385 19.8747 18.4953 19.9249 18.6167C19.9752 18.7381 20.0011 18.8682 20.0011 18.9996C20.0011 19.131 19.9752 19.2611 19.9249 19.3825C19.8747 19.5039 19.801 19.6142 19.7081 19.7071C19.6151 19.8 19.5048 19.8737 19.3835 19.924C19.2621 19.9743 19.132 20.0001 19.0006 20.0001C18.8692 20.0001 18.7391 19.9743 18.6177 19.924C18.4963 19.8737 18.386 19.8 18.2931 19.7071L10.0006 11.4133L1.70806 19.7071C1.52042 19.8947 1.26592 20.0001 1.00056 20.0001C0.735192 20.0001 0.480697 19.8947 0.293056 19.7071C0.105415 19.5194 5.23096e-09 19.2649 0 18.9996C-5.23096e-09 18.7342 0.105415 18.4797 0.293056 18.2921L8.58681 9.99958L0.293056 1.70708C0.105415 1.51944 -1.97712e-09 1.26494 0 0.999579C1.97712e-09 0.734215 0.105415 0.47972 0.293056 0.292079C0.480697 0.104439 0.735192 -0.000976561 1.00056 -0.000976562C1.26592 -0.000976564 1.52042 0.104439 1.70806 0.292079L10.0006 8.58583L18.2931 0.292079C18.4807 0.104439 18.7352 -0.000976568 19.0006 -0.000976562C19.2659 -0.000976557 19.5204 0.104439 19.7081 0.292079C19.8957 0.47972 20.0011 0.734215 20.0011 0.999579C20.0011 1.26494 19.8957 1.51944 19.7081 1.70708L11.4143 9.99958L19.7081 18.2921Z"
+                fill="#111111"
+              />
+            </svg>
+          </button>
+          <h1 className="absolute top-10">새 리스트 생성</h1>
+          <div className="flex mt-20 w-full">
+            <button className="bg-[#f3f3f3] text-[#767676] rounded-xl px-4 py-3">
+              ⊕
+            </button>
+            <div
+              className={`flex-center rounded-full bg-[#F3F3F3] px-2 w-full h-12 ml-4`}
+            >
+              <input
+                type="text"
+                value={newListName}
+                onChange={handleListName}
+                className="flex-grow placeholder-[#767676] bg-[#F3F3F3] outline-none ml-4"
+                placeholder="새 리스트 명을 입력해 주세요."
+              />
+              <p className="text-[#767676] mr-2">{newListName.length}/10</p>
+            </div>
+          </div>
+          <hr className="mt-4 w-full" />
+
+          <div className="flex-center mt-4">
+            <p>공개 여부</p>
+            <button className="ml-20 rounded-full border px-4 py-1 border-[point-green] bg-point-green bg-opacity-10">
+              공개
+            </button>
+            <button className="ml-4 rounded-full border px-4 py-1">
+              비공개
+            </button>
+          </div>
+          <button
+            type="submit"
+            // disabled={true}
+            className={`absolute bottom-10 bg-[#f3f3f3] text-[#767676] rounded-full w-[77.4%] mt-6 py-5
+            ${
+              false
+                ? 'bg-point-green drop-shadow-lg transition-all duration-300 ease-in-out'
+                : ''
+            }`}
+          >
+            저장
+          </button>
         </div>
       )}
 
@@ -83,7 +503,7 @@ export default function Quotes() {
             <p>2.2만</p>
           </div>
           <div id="comments" className="flex-center flex-col mb-4">
-            <button onClick={toggleCommentButton}>
+            <button onClick={toggleComment}>
               <svg
                 width="28"
                 height="28"
@@ -105,7 +525,7 @@ export default function Quotes() {
           </div>
 
           <div id="bookmarks" className="flex-center flex-col mb-4">
-            <button>
+            <button onClick={toggleBookmark}>
               <svg
                 width="28"
                 height="28"

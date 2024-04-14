@@ -1,11 +1,10 @@
 import type { MetaFunction } from '@remix-run/node'
 import { Link, Form, json } from '@remix-run/react'
-import { SetStateAction, useState } from 'react'
+import { useState } from 'react'
 
 import * as zod from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { getValidatedFormData, useRemixForm } from 'remix-hook-form'
-import axios from 'axios'
 
 export const meta: MetaFunction = () => {
   return [
@@ -43,6 +42,7 @@ export const action = async ({ request }: ActionFuctionArgs) => {
 
 export default function SignUp() {
   const {
+    watch,
     getValues,
     handleSubmit,
     formState: { errors },
@@ -55,6 +55,15 @@ export default function SignUp() {
   const [isDuplicateId, setIsDuplicateId] = useState('')
   const [isDuplicateNickname, setIsDuplicateNickname] = useState('')
   const [isInvalidPassword, setIsInvalidPassword] = useState(false)
+
+  const formCompleted = watch([
+    'id',
+    'nickname',
+    'password',
+    'confirmPassword',
+    'identityVerificationQuestion',
+    'identityVerificationAnswer',
+  ])
 
   const handlePasswordBlur = () => {
     if (
@@ -260,8 +269,18 @@ export default function SignUp() {
 
           <button
             type="submit"
+            // disabled={true}
             className={`flex-center bg-[#dddddd] rounded-full w-full mt-6 p-5
-            ${isInvalidPassword ? 'border-red-500' : ''}`}
+            ${
+              watch('id') &&
+              watch('nickname') &&
+              watch('password') &&
+              watch('confirmPassword') &&
+              watch('identityVerificationQuestion') &&
+              watch('identityVerificationAnswer')
+                ? 'bg-point-green drop-shadow-lg transition-all duration-300 ease-in-out'
+                : ''
+            }`}
           >
             확인
           </button>
