@@ -1,10 +1,12 @@
 import type { MetaFunction } from '@remix-run/node'
-import { Link, Form, json } from '@remix-run/react'
+import { Link, Form } from '@remix-run/react'
 import { useState } from 'react'
+import { redirectWithSuccess } from 'remix-toast'
 
 import * as zod from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { getValidatedFormData, useRemixForm } from 'remix-hook-form'
+import axios from '../api/axios'
 
 export const meta: MetaFunction = () => {
   return [
@@ -15,16 +17,35 @@ export const meta: MetaFunction = () => {
 
 const signupSchema = zod
   .object({
-    id: zod.string().min(4),
-    nickname: zod.string().min(4),
-    password: zod.string().min(4),
-    confirmPassword: zod.string().min(4),
-    identityVerificationQuestion: zod.string().min(1),
-    identityVerificationAnswer: zod.string().min(1),
+    id: zod
+      .string()
+      .min(5, '로그인 아이디는 최소 5자 이상이어야 합니다.')
+      .max(20, '로그인 아이디는 최대 20자 이하여야 합니다.')
+      .regex(/^[a-z0-9]+$/, '로그인 아이디는 영어 소문자와 숫자만 가능합니다.'),
+    nickname: zod
+      .string()
+      .min(3, '문자열은 최소 3자 이상이어야 합니다.')
+      .max(20, '문자열은 최대 20자 이하여야 합니다.')
+      .regex(/^(?!leaved_)[\w-,_가-힣]+$/, '사용할 수 없는 닉네임입니다.'),
+    password: zod
+      .string()
+      .min(8, '비밀번호는 최소 8자 이상이어야 합니다.')
+      .max(16, '비밀번호는 최대 16자 이하여야 합니다.')
+      .regex(
+        /^(?=.*[a-z])(?=.*\d)[a-zA-Z\d!@#$]+$/,
+        '비밀번호는 소문자 알파벳과 숫자를 포함하는 조합이어야 합니다.'
+      ),
+    confirmPassword: zod.string().min(8).max(16),
+    identityVerificationQuestion: zod
+      .string()
+      .min(1, '본인 확인 질문을 선택하세요.'),
+    identityVerificationAnswer: zod
+      .string()
+      .min(1, '본인 확인 답변을 입력하세요.'),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ['confirmPassword'],
+    message: '패스워드가 일치하지 않습니다.',
+    path: ['password'],
   })
 
 type FormData = zod.infer<typeof signupSchema>
@@ -34,10 +55,21 @@ const resolver = zodResolver(signupSchema)
 export const action = async ({ request }: ActionFuctionArgs) => {
   const { data } = await getValidatedFormData<FormData>(request, resolver)
 
-  // axios
-  console.log(data)
-
-  return json(data)
+  try {
+    await axios.post('/users', {
+      id: data?.id,
+      password: data?.password,
+      nickname: data?.nickname,
+      identityVerificationQuestion: data?.identityVerificationQuestion,
+      identityVerificationAnswer: data?.identityVerificationAnswer,
+    })
+    return redirectWithSuccess(
+      '/auth',
+      '회원가입이 완료되었습니다. 로그인 해주세요.'
+    )
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 export default function SignUp() {
@@ -64,6 +96,27 @@ export default function SignUp() {
     'identityVerificationQuestion',
     'identityVerificationAnswer',
   ])
+
+  const questions = [
+    '가장 좋아하는 동물은 무엇인가요?',
+    '어머니의 출신 지역은 어디인가요?',
+    '가장 좋아하는 음식은 무엇인가요?',
+    '최초로 방문한 국가는 어디인가요?',
+    '어릴 때 가장 친한 친구의 이름은 무엇인가요?',
+    '어머니의 소녀시절 별명은 무엇인가요?',
+    '첫 번째 애완 동물의 이름은 무엇인가요?',
+    '출생 도시는 어디인가요?',
+    '자신이 졸업한 초등학교의 이름은 무엇인가요?',
+    '가장 기억에 남는 여행 경험은 무엇이었나요?',
+    '어릴 적 꿈이 무엇이었나요?',
+    '첫 번째 사귄 연인의 이름은 무엇이었나요?',
+    '가장 기억에 남는 선물은 무엇이었나요?',
+    '가장 인상 깊었던 책의 제목은 무엇인가요?',
+    '자신이 가장 좋아하는 스포츠 팀은 어디인가요?',
+    '가장 기억에 남는 영화는 무엇이었나요?',
+    '자신의 어린 시절 가장 큰 꿈은 무엇이었나요?',
+    '최근에 가장 좋아하는 노래는 무엇인가요?',
+  ]
 
   const handlePasswordBlur = () => {
     if (
@@ -115,7 +168,7 @@ export default function SignUp() {
           <div
             className={`flex border rounded-full mt-16 px-4 py-3
         ${
-          isDuplicateId == 'true'
+          errors.id || isDuplicateId == 'true'
             ? 'border-red-500'
             : isDuplicateId == 'false'
             ? 'border-green-500'
@@ -126,10 +179,11 @@ export default function SignUp() {
               type="text"
               {...register('id')}
               required
+              onChange={() => setIsDuplicateId('')}
               className="placeholder-[#767676] outline-none flex-grow ml-4"
               placeholder="로그인 아이디..."
             />
-            {errors.id && <p>{errors.id.message}</p>}
+
             <button
               type="button"
               onClick={handleDuplicateIdCheck}
@@ -138,6 +192,12 @@ export default function SignUp() {
               중복 확인
             </button>
           </div>
+          {errors.id && isDuplicateId == '' && (
+            <p className="text-red-500 text-sm ml-6 mt-1">
+              {errors.id.message}
+            </p>
+          )}
+
           {isDuplicateId == '' && <div className="h-[24px]" />}
           {isDuplicateId == 'true' && (
             <p className="text-red-500 text-sm ml-6 mt-1">
@@ -177,7 +237,7 @@ export default function SignUp() {
           </div>
           {isDuplicateNickname == '' && (
             <p className="text-[#767676] text-sm ml-6 mt-1">
-              ※ 영어(대문자,소문자), 한글, 숫자만 가능
+              ※ 영어, 한글, 특수문자(-, _), 숫자만 가능
             </p>
           )}
           {isDuplicateNickname == 'true' && (
@@ -193,43 +253,40 @@ export default function SignUp() {
 
           <div
             className={`flex border rounded-full mt-1 px-4 py-3
-            ${isInvalidPassword ? 'border-red-500' : ''}`}
+            ${errors.password ? 'border-red-500' : ''}`}
           >
             <input
               type="password"
               required
               {...register('password')}
-              onBlur={handlePasswordBlur}
               className="placeholder-[#767676] outline-none flex-grow ml-4 py-2"
               placeholder="패스워드..."
             />
-            {errors.password && <p>{errors.password.message}</p>}
           </div>
 
           <div
             className={`flex border rounded-full mt-6 px-4 py-3 
-        ${isInvalidPassword ? 'border-red-500' : ''}`}
+        ${errors.password ? 'border-red-500' : ''}`}
           >
             <input
               type="password"
               required
               {...register('confirmPassword')}
-              onBlur={handlePasswordBlur}
               className="placeholder-[#767676] outline-none flex-grow ml-4 py-2"
               placeholder="패스워드 확인..."
             />
           </div>
-          {!isInvalidPassword && <div className="h-[24px]" />}
-          {isInvalidPassword && (
+          {!errors.password && <div className="h-[24px]" />}
+          {errors.password && (
             <p className="text-red-500 text-sm ml-6 mt-1">
-              패스워드가 일치하지 않습니다.
+              {errors.password.message}
             </p>
           )}
 
           <div className="flex border rounded-full px-4 py-4">
             <select
               {...register('identityVerificationQuestion')}
-              className="outline-none bg-transparent flex-grow h-8 mx-2 overflow-auto text-[#767676]"
+              className="outline-none bg-transparent flex-grow h-8 w-12 mx-2 overflow-auto text-[#767676]"
             >
               {errors.identityVerificationQuestion && (
                 <p>{errors.identityVerificationQuestion.message}</p>
@@ -237,21 +294,11 @@ export default function SignUp() {
               <option value="" disabled hidden selected>
                 본인 확인 질문 선택...
               </option>
-              <option value="최근 참여한 활동 중 하나는 어떤 것인가요?">
-                최근 참여한 활동 중 하나는 어떤 것인가요?
-              </option>
-              <option value="가족 중 한명의 이름은 무엇이고, 어떤 관계인가요?">
-                가족 중 한명의 이름은 무엇이고, 어떤 관계인가요?
-              </option>
-              <option value="최근 구매한 제품 하나는 무엇인가요?">
-                최근 구매한 제품 하나는 무엇인가요?
-              </option>
-              <option value="최근 3년 내에 거주한 주소 중 하나는 무엇인가요?">
-                최근 3년 내에 거주한 주소 중 하나는 무엇인가요?
-              </option>
-              <option value="최근 통화한 연락처 중 하나는 누구인가요?">
-                최근 통화한 연락처 중 하나는 누구인가요?
-              </option>
+              {questions.map((question) => (
+                <option key={question} value={question}>
+                  {question}
+                </option>
+              ))}
             </select>
           </div>
           <div className="flex border rounded-full mt-6 px-4 py-3">
@@ -269,7 +316,6 @@ export default function SignUp() {
 
           <button
             type="submit"
-            // disabled={true}
             className={`flex-center bg-[#dddddd] rounded-full w-full mt-6 p-5
             ${
               watch('id') &&

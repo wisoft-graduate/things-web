@@ -1,10 +1,21 @@
-import type { MetaFunction } from '@remix-run/node'
-import { Link, Form, json } from '@remix-run/react'
-import { useState } from 'react'
+import type { LoaderFunction, MetaFunction } from '@remix-run/node'
+import {
+  Link,
+  Form,
+  json,
+  useLoaderData,
+  useLocation,
+  redirect,
+} from '@remix-run/react'
+import { useEffect, useState } from 'react'
+
+import axios from '../api/axios'
 
 import * as zod from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { getValidatedFormData, useRemixForm } from 'remix-hook-form'
+import { jsonWithError, redirectWithSuccess } from 'remix-toast'
+import { commitSession, getSession } from '~/util/session.server'
 
 export const meta: MetaFunction = () => {
   return [
@@ -25,19 +36,30 @@ const resolver = zodResolver(signinSchema)
 export const action = async ({ request }: ActionFuctionArgs) => {
   const { data } = await getValidatedFormData<FormData>(request, resolver)
 
-  // axios
-  console.log(data)
+  try {
+    const response = await axios.post('/users/sign-in', data)
+    const { accessToken, refreshToken } = response.data
 
-  return json(data)
+    const session = await getSession(request.headers.get('Cookie'))
+    session.set('accessToken', accessToken)
+    session.set('refreshToken', refreshToken)
+
+    return redirect('/quotes', {
+      headers: {
+        'Set-Cookie': await commitSession(session),
+      },
+    })
+  } catch (error) {
+    console.error('로그인 실패:', error)
+    return json(
+      { error: '로그인에 실패했습니다. 다시 시도해주세요.' },
+      { status: 400 }
+    )
+  }
 }
 
 export default function Auth() {
-  const {
-    getValues,
-    handleSubmit,
-    formState: { errors },
-    register,
-  } = useRemixForm<FormData>({
+  const { handleSubmit, register } = useRemixForm<FormData>({
     mode: 'onSubmit',
     resolver,
   })
@@ -60,7 +82,6 @@ export default function Auth() {
       >
         로그인
       </button>
-
       {isLoginOpen && (
         <div className="flex-center flex-col w-full layer popup text-black bg-white h-[60%] animate-slide-up !top-auto overflow-hidden full rounded-t-[30px] p-8">
           <button
@@ -110,7 +131,6 @@ export default function Auth() {
           </Form>
         </div>
       )}
-
       <Link
         to={'/signup'}
         className="absolute flex-center bottom-[155px] w-[55%] h-[55px] bg-[#CBF147] bg-opacity-25 hover:bg-opacity-40 transition duration-300 ease-in-out border-point-green border-[1px] rounded-full"

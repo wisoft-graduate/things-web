@@ -1,5 +1,5 @@
 import type { MetaFunction } from '@remix-run/node'
-import { comment } from 'postcss'
+import EmojiPicker from 'emoji-picker-react'
 import { SetStateAction, useState } from 'react'
 
 export const meta: MetaFunction = () => {
@@ -33,6 +33,30 @@ export default function Quotes() {
   const [isAddBookmarkOpen, setIsAddBookmarkOpen] = useState(false)
 
   const [newListName, setNewListName] = useState('')
+  const [isEmojiOpen, setIsEmojiOpen] = useState(false)
+
+  const [selectedEmoji, setSelectedEmoji] = useState('')
+  const handleEmojiClick = (emojiObject: { emoji: SetStateAction<string> }) => {
+    setSelectedEmoji(emojiObject.emoji)
+    closeEmojiPicker()
+  }
+
+  const toggleEmojiPicker = () => {
+    setIsEmojiOpen(!isEmojiOpen)
+  }
+
+  const closeEmojiPicker = () => {
+    setIsEmojiOpen(false)
+  }
+
+  const [isPublic, setIsPublic] = useState(true)
+  const handlePublicClick = () => {
+    setIsPublic(true)
+  }
+
+  const handlePrivateClick = () => {
+    setIsPublic(false)
+  }
 
   const handleListName = (e: { target: { value: SetStateAction<string> } }) => {
     setNewListName(e.target.value)
@@ -106,6 +130,13 @@ export default function Quotes() {
       quotationIds: [],
     },
   ])
+
+  const addBookmark = (bookmark: Bookmark) => {
+    setBookmarks([...bookmarks, bookmark])
+    setSelectedEmoji('')
+    setNewListName('')
+    toggleAddBookmark()
+  }
 
   const toggleComment = () => {
     setIsCommentOpen(!isCommentOpen)
@@ -414,9 +445,23 @@ export default function Quotes() {
           </button>
           <h1 className="absolute top-10">새 리스트 생성</h1>
           <div className="flex mt-20 w-full">
-            <button className="bg-[#f3f3f3] text-[#767676] rounded-xl px-4 py-3">
-              ⊕
+            <button
+              onClick={toggleEmojiPicker}
+              className="bg-[#f3f3f3] text-[#767676] rounded-xl px-2 z-100"
+            >
+              <p className="text-[32px]">
+                {selectedEmoji ? selectedEmoji : '⊕'}
+              </p>
             </button>
+            {/* <div onBlur={closeEmojiPicker}> */}
+            <EmojiPicker
+              open={isEmojiOpen}
+              onEmojiClick={handleEmojiClick}
+              className="!absolute left-10 top-10 z-10"
+              height={350}
+            />
+            {/* </div> */}
+
             <div
               className={`flex-center rounded-full bg-[#F3F3F3] px-2 w-full h-12 ml-4`}
             >
@@ -424,6 +469,7 @@ export default function Quotes() {
                 type="text"
                 value={newListName}
                 onChange={handleListName}
+                maxLength={10}
                 className="flex-grow placeholder-[#767676] bg-[#F3F3F3] outline-none ml-4"
                 placeholder="새 리스트 명을 입력해 주세요."
               />
@@ -434,21 +480,44 @@ export default function Quotes() {
 
           <div className="flex-center mt-4">
             <p>공개 여부</p>
-            <button className="ml-20 rounded-full border px-4 py-1 border-[point-green] bg-point-green bg-opacity-10">
+            <button
+              onClick={handlePublicClick}
+              className={`ml-20 rounded-full border px-4 py-1 ${
+                isPublic
+                  ? 'border-[point-green] bg-point-green bg-opacity-10'
+                  : 'text-[#767676]'
+              }  `}
+            >
               공개
             </button>
-            <button className="ml-4 rounded-full border px-4 py-1">
+            <button
+              onClick={handlePrivateClick}
+              className={`ml-4 rounded-full border px-4 py-1 ${
+                isPublic
+                  ? 'text-[#767676]'
+                  : 'border-[point-green] bg-point-green bg-opacity-10'
+              }`}
+            >
               비공개
             </button>
           </div>
           <button
             type="submit"
-            // disabled={true}
-            className={`absolute bottom-10 bg-[#f3f3f3] text-[#767676] rounded-full w-[77.4%] mt-6 py-5
+            disabled={selectedEmoji && newListName ? false : true}
+            onClick={() =>
+              addBookmark({
+                id: 1,
+                name: newListName,
+                icon: selectedEmoji,
+                visibility: isPublic,
+                quotationIds: [],
+              })
+            }
+            className={`absolute bottom-10 bg-[#f3f3f3] rounded-full w-[77.4%] mt-6 py-5
             ${
-              false
+              selectedEmoji && newListName
                 ? 'bg-point-green drop-shadow-lg transition-all duration-300 ease-in-out'
-                : ''
+                : 'text-[#767676]'
             }`}
           >
             저장

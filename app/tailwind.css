@@ -88,6 +88,10 @@
     top: auto !important;
 }
 
+.\!absolute {
+    position: absolute !important;
+}
+
 .layer.popup {
     position: absolute;
     top: 0;

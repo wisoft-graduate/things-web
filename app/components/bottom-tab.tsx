@@ -25,7 +25,10 @@ export default function BottomTab() {
 
           <p className="group-hover:text-point-green">Quotes</p>
         </Link>
-        <div className="group flex-1 flex-col flex-center cursor-pointer">
+        <Link
+          to={'/search'}
+          className="group flex-1 flex-col flex-center cursor-pointer"
+        >
           <svg
             className="mb-0.5 group-hover:fill-point-green"
             width="24"
@@ -40,8 +43,11 @@ export default function BottomTab() {
             />
           </svg>
           <p className="group-hover:text-point-green">Search</p>
-        </div>
-        <div className="group flex-1 flex-col flex-center cursor-pointer">
+        </Link>
+        <Link
+          to={'/list'}
+          className="group flex-1 flex-col flex-center cursor-pointer"
+        >
           <svg
             className="mb-0.5"
             width="24"
@@ -60,10 +66,9 @@ export default function BottomTab() {
             />
           </svg>
           <p className="group-hover:text-point-green">List</p>
-        </div>
+        </Link>
         <Link
-          // to={'/my'}
-          to={'/auth'}
+          to={'/my'}
           className="group flex-1 flex-col flex-center cursor-pointer"
         >
           <svg
