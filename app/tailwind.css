@@ -92,6 +92,20 @@
     position: absolute !important;
 }
 
+.infinite-scroll-container {
+    overflow-y: auto;
+    height: 80vh;
+}
+
+.infinite-scroll-container::-webkit-scrollbar {
+    display: none;
+}
+
+.infinite-scroll-container {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
 .layer.popup {
     position: absolute;
     top: 0;

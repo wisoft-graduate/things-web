@@ -24,6 +24,7 @@
     "react-hook-form": "^7.51.2",
     "react-infinite-scroll-component": "^6.1.0",
     "react-slick": "^0.30.2",
+    "react-swipeable": "^7.0.1",
     "remix-hook-form": "^4.3.1",
     "remix-toast": "^1.2.0",
     "zod": "^3.22.4"

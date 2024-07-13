@@ -40,7 +40,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               blanditiis deleniti vitae temporibus, cumque placeat consequatur.
             </div>
           </div>
-          <div className="relative h-full">{children}</div>
+          <div className="relative min-h-screen">{children}</div>
         </div>
         <ScrollRestoration />
         <Scripts />

@@ -1,6 +1,5 @@
 import type { MetaFunction } from '@remix-run/node'
-import { SetStateAction, useEffect, useState } from 'react'
-import InfiniteScroll from 'react-infinite-scroll-component'
+import { SetStateAction, useCallback, useEffect, useRef, useState } from 'react'
 
 import axios from 'axios'
 
@@ -11,41 +10,66 @@ export const meta: MetaFunction = () => {
   ]
 }
 
+interface Quote {
+  id: number
+  thumbnailUrl: string
+  title: string
+}
+
 export default function Search() {
   const [activeTab, setActiveTab] = useState('조회순')
 
-  const [photos, setPhotos] = useState([])
+  const [photos, setPhotos] = useState<Quote[]>([])
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
+
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const handleTabClick = async (tab: SetStateAction<string>) => {
     setActiveTab(tab)
   }
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
+  const fetchPhotos = useCallback(async () => {
+    setLoading(true)
+    try {
       const response = await axios.get(
         `https://jsonplaceholder.typicode.com/photos?_page=${page}&_limit=10`
       )
       setPhotos((prevPhotos) => [...prevPhotos, ...response.data])
+    } catch (error) {
+      console.error('Error fetching quotes:', error)
+    } finally {
       setLoading(false)
-      if (response.data.length === 0) {
-        // 더 이상 불러올 데이터가 없는 경우
-        setHasMore(false)
-      }
     }
-
-    fetchData()
   }, [page])
 
-  const fetchMoreData = () => {
-    setPage((prevPage) => prevPage + 1)
-  }
+  // useEffect(() => {
+  //   fetchPhotos()
+  // }, [fetchPhotos])
+
+  useEffect(() => {
+    console.log(page)
+  }, [])
+
+  // const handleScroll = useCallback(() => {
+  //   console.log(page)
+  //   if (containerRef.current) {
+  //     const { scrollTop, scrollHeight, clientHeight } = containerRef.current
+  //     if (scrollTop + clientHeight >= scrollHeight - 5 && !loading) {
+  //       setPage((prevPage) => prevPage + 1)
+  //     }
+  //   }
+  // }, [loading])
+
+  // useEffect(() => {
+  //   const container = containerRef.current
+  //   container?.addEventListener('scroll', handleScroll)
+  //   return () => container?.removeEventListener('scroll', handleScroll)
+  // }, [handleScroll])
 
   return (
-    <div className="flex-col h-full bg-white p-8 overflow-hidden">
+    <div className="flex-col h-full bg-white p-8">
       <div className="flex-center rounded-full bg-[#F3F3F3] w-full h-12 px-4">
         <svg
           className="mb-0.5"
@@ -94,47 +118,35 @@ export default function Search() {
           공유 순
         </button>
       </div>
-      <div className="mt-4 overflow-y-auto">
-        {activeTab === '조회순' && (
-          //   <div className="grid grid-cols-2 gap-4">
-          <InfiniteScroll
-            dataLength={photos.length}
-            next={fetchMoreData}
-            hasMore={hasMore}
-            loader={<div className="text-center">로딩 중...</div>}
-            endMessage={
-              <div className="text-center">모든 항목을 불러왔습니다.</div>
-            }
-          >
-            <div className="grid grid-cols-2 gap-4">
-              {photos.map((photo) => (
-                <div
-                  key={photo.id}
-                  className="w-[242px] h-[282px] rounded-[20px]"
-                >
-                  <div className="ml-2 mt-2 flex-center absolute rounded-full bg-[#111111]  bg-opacity-50 w-8 h-8 text-white">
-                    <p className="text-lg text-bold">1</p>
-                  </div>
-                  <img
-                    src={photo.thumbnailUrl}
-                    alt={photo.title}
-                    className="h-full rounded-[20px]"
-                  />
-                </div>
-              ))}
+      {activeTab === '조회순' && (
+        <div className="infinite-scroll-container grid grid-cols-2 gap-4 mt-4">
+          {photos.map((photo) => (
+            <div
+              key={photo.id}
+              className="w-[242px] h-[282px] rounded-[20px] relative"
+            >
+              <div className="flex-center rounded-full absolute mt-2 ml-2 bg-[#111111] bg-opacity-50 w-8 h-8 text-white">
+                <p className="text-lg text-bold">{photo.id}</p>
+              </div>
+
+              <img
+                src={photo.thumbnailUrl}
+                alt={photo.title}
+                className="h-full rounded-[20px]"
+              />
             </div>
-          </InfiniteScroll>
-          //   </div>
-        )}
-        {activeTab === '좋아요순' && (
-          <div className="flex bg-green-500 h-[12600px] overflow-y-auto">
-            좋아요순 화면
-          </div>
-        )}
-        {activeTab === '공유순' && (
-          <div className="flex bg-blue-500">공유순 화면</div>
-        )}
-      </div>
+          ))}
+          {loading && <div>Loading...</div>}
+        </div>
+      )}
+      {activeTab === '좋아요순' && (
+        <div className="flex bg-green-500 h-[12600px] overflow-y-auto">
+          좋아요순 화면
+        </div>
+      )}
+      {activeTab === '공유순' && (
+        <div className="flex bg-blue-500">공유순 화면</div>
+      )}
     </div>
   )
 }

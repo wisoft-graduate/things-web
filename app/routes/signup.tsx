@@ -143,7 +143,7 @@ export default function SignUp() {
 
   return (
     <div className="absolute sm:p-20 p-4 h-screen w-full text-black bg-white z-50">
-      <Link to="/quotes" className="absolute right-10">
+      <Link to="/auth" className="absolute right-10">
         <svg
           width="20"
           height="20"
