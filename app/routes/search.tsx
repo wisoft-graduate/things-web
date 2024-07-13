@@ -11,18 +11,18 @@ export const meta: MetaFunction = () => {
 }
 
 interface Quote {
-  id: number
-  thumbnailUrl: string
-  title: string
+  id: string
+  rank: number
+  count: number
+  backgroundImagePath: string
 }
 
 export default function Search() {
-  const [activeTab, setActiveTab] = useState('조회순')
+  const [activeTab, setActiveTab] = useState('좋아요순')
 
-  const [photos, setPhotos] = useState<Quote[]>([])
+  const [quotes, setQuotes] = useState<Quote[]>([])
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
 
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -30,13 +30,16 @@ export default function Search() {
     setActiveTab(tab)
   }
 
-  const fetchPhotos = useCallback(async () => {
+  const fetchQuotes = useCallback(async () => {
     setLoading(true)
     try {
       const response = await axios.get(
-        `https://jsonplaceholder.typicode.com/photos?_page=${page}&_limit=10`
+        `http://52.79.229.237:8080/quotations/rank?rankProperty=LIKE&page=${page}&count=10`
       )
-      setPhotos((prevPhotos) => [...prevPhotos, ...response.data])
+      setQuotes((prevQuotes) => [
+        ...prevQuotes,
+        ...response.data.data.quotationRanks,
+      ])
     } catch (error) {
       console.error('Error fetching quotes:', error)
     } finally {
@@ -44,29 +47,24 @@ export default function Search() {
     }
   }, [page])
 
-  // useEffect(() => {
-  //   fetchPhotos()
-  // }, [fetchPhotos])
+  useEffect(() => {
+    fetchQuotes()
+  }, [fetchQuotes])
+
+  const handleScroll = useCallback(() => {
+    if (containerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = containerRef.current
+      if (scrollTop + clientHeight >= scrollHeight - 5 && !loading) {
+        setPage((prevPage) => prevPage + 1)
+      }
+    }
+  }, [loading])
 
   useEffect(() => {
-    console.log(page)
-  }, [])
-
-  // const handleScroll = useCallback(() => {
-  //   console.log(page)
-  //   if (containerRef.current) {
-  //     const { scrollTop, scrollHeight, clientHeight } = containerRef.current
-  //     if (scrollTop + clientHeight >= scrollHeight - 5 && !loading) {
-  //       setPage((prevPage) => prevPage + 1)
-  //     }
-  //   }
-  // }, [loading])
-
-  // useEffect(() => {
-  //   const container = containerRef.current
-  //   container?.addEventListener('scroll', handleScroll)
-  //   return () => container?.removeEventListener('scroll', handleScroll)
-  // }, [handleScroll])
+    const container = containerRef.current
+    container?.addEventListener('scroll', handleScroll)
+    return () => container?.removeEventListener('scroll', handleScroll)
+  }, [handleScroll])
 
   return (
     <div className="flex-col h-full bg-white p-8">
@@ -92,18 +90,10 @@ export default function Search() {
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-16 mt-4 px-8">
-        <button
-          onClick={() => handleTabClick('조회순')}
-          className={`flex-grow text-lg   ${
-            activeTab === '조회순' ? 'border-b-2 border-black' : ''
-          }`}
-        >
-          조회 순
-        </button>
+      <div className="grid grid-cols-2 gap-16 mt-4 px-8">
         <button
           onClick={() => handleTabClick('좋아요순')}
-          className={`flex-grow text-lg px-4 py-2 focus:outline-none ${
+          className={`flex-grow text-lg   ${
             activeTab === '좋아요순' ? 'border-b-2 border-black' : ''
           }`}
         >
@@ -118,32 +108,35 @@ export default function Search() {
           공유 순
         </button>
       </div>
-      {activeTab === '조회순' && (
-        <div className="infinite-scroll-container grid grid-cols-2 gap-4 mt-4">
-          {photos.map((photo) => (
+      {activeTab === '좋아요순' && (
+        <div
+          ref={containerRef}
+          className="infinite-scroll-container grid grid-cols-2 gap-4 mt-4"
+        >
+          {quotes.map((quote) => (
             <div
-              key={photo.id}
+              key={quote.id}
               className="w-[242px] h-[282px] rounded-[20px] relative"
             >
               <div className="flex-center rounded-full absolute mt-2 ml-2 bg-[#111111] bg-opacity-50 w-8 h-8 text-white">
-                <p className="text-lg text-bold">{photo.id}</p>
+                <p className="text-lg text-bold">{quote.rank}</p>
               </div>
 
               <img
-                src={photo.thumbnailUrl}
-                alt={photo.title}
+                src={`https://loremflickr.com/242/282?random=${quote.id}`}
+                alt={quote.id}
                 className="h-full rounded-[20px]"
               />
             </div>
           ))}
-          {loading && <div>Loading...</div>}
+          {loading && (
+            <div className="loading-overlay">
+              <div className="loading-spinner"></div>
+            </div>
+          )}
         </div>
       )}
-      {activeTab === '좋아요순' && (
-        <div className="flex bg-green-500 h-[12600px] overflow-y-auto">
-          좋아요순 화면
-        </div>
-      )}
+
       {activeTab === '공유순' && (
         <div className="flex bg-blue-500">공유순 화면</div>
       )}
